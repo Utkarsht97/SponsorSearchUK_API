@@ -118,54 +118,128 @@ def get_profile(profile_id: Optional[str] = None):
     return result.data[0]
 
 
-def build_prompt(profile, inspected_fields):
+def build_prompt(profile, inspected_fields, application_url):
     return f"""
-You are an autofill assistant for job application forms.
+You are an AI autofill engine for job application forms.
 
-You will receive:
-1. A candidate profile from Supabase.
+You receive:
+1. A complete candidate profile JSON from Supabase.
 2. A list of inspected form fields from the user's current browser page.
+3. The application URL.
 
-Your task:
-Return a JSON object with fillable_fields only.
+Your job is to create a fill package that can be safely inserted into the visible application form.
 
-Each fillable field must include:
-source_index
-visible_label
-field_type
-answer
+Use the entire candidate profile as the source of truth, including:
+- profile_metadata
+- personal_identity
+- contact
+- work_authorization
+- career_intent
+- professional_summary
+- skills
+- work_experience
+- education
+- projects
+- documents
+- application_question_bank
+- preferences
+- retrieval_metadata
+
+You may fill fields for:
+- full name
+- first name
+- middle name
+- last name
+- email
+- phone
+- country code
+- city
+- country
+- current location
+- LinkedIn
+- portfolio
+- GitHub
+- personal website
+- current visa status
+- work authorization
+- sponsorship requirement
+- notice period
+- availability date
+- relocation preference
+- preferred locations
+- salary expectation
+- target roles
+- current job title
+- current company
+- previous employers
+- degree
+- university
+- field of study
+- graduation year
+- skills
+- tools
+- projects
+- achievements
+- why this role
+- why this company
+- tell me about yourself
+- sponsorship explanation
+- relocation explanation
+- salary expectation answer
+- other open-ended application questions
 
 Rules:
-- Do not invent information.
-- If unsure, leave answer empty.
-- Do not submit forms.
+- Do not invent facts that are not supported by the profile.
+- For open-ended questions, you may generate a concise answer using the profile.
+- If the profile has a matching answer inside application_question_bank, prefer that.
+- If the field asks for a long answer, keep it natural and specific.
+- If the field asks for a short answer, keep it concise.
 - Do not fill passwords.
-- Do not fill sensitive legal declarations unless clearly present in the profile.
-- Keep answers concise.
-- Match fields using visible_label, name, id, placeholder and context.
+- Do not fill captcha fields.
+- Do not submit the form.
+- Do not answer criminal, disability, ethnicity, gender, veteran, or equal-opportunity questions unless the profile explicitly contains a safe answer.
+- Do not fill file upload fields. Mark them as needs_manual_upload.
+- If unsure, return an empty answer.
 
-Candidate profile:
+Important:
+Each inspected field has a source_index. Use that exact source_index in your output so the extension can fill the correct field.
+
+Candidate profile JSON:
 {profile}
 
 Inspected fields:
 {inspected_fields}
 
-Return only valid JSON in this format:
+Application URL:
+{application_url}
 
+Return only valid JSON. No markdown. No explanation.
+
+Required format:
 {{
   "status": "success",
+  "profile_id": "",
+  "candidate_name": "",
   "fillable_count": 0,
   "fillable_fields": [
     {{
       "source_index": 0,
       "visible_label": "",
       "field_type": "",
-      "answer": ""
+      "answer": "",
+      "answer_source": "profile | generated | application_question_bank | empty",
+      "confidence": 0.0
+    }}
+  ],
+  "manual_fields": [
+    {{
+      "source_index": 0,
+      "visible_label": "",
+      "reason": ""
     }}
   ]
 }}
 """
-
 
 @app.post("/generate-fill-package")
 def generate_fill_package(payload: FillPackageRequest):
@@ -179,7 +253,7 @@ def generate_fill_package(payload: FillPackageRequest):
             "fillable_fields": []
         }
 
-    prompt = build_prompt(profile, payload.inspected_fields)
+    prompt = build_prompt(profile, payload.inspected_fields, payload.application_url)
 
     try:
         response = model.generate_content(prompt)
