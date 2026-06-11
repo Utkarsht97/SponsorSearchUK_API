@@ -276,6 +276,66 @@ Required format:
   ]
 }}
 """
+def looks_like_email(value):
+    value = str(value or "").strip()
+    return "@" in value and "." in value and " " not in value
+
+
+def validate_fill_package(fill_package):
+    safe_fields = []
+    manual_fields = fill_package.get("manual_fields", [])
+
+    for field in fill_package.get("fillable_fields", []):
+        answer = str(field.get("answer", "")).strip()
+        label = str(field.get("visible_label", "")).lower()
+        field_type = str(field.get("field_type", "")).lower()
+
+        if not answer:
+            continue
+
+        if any(word in label for word in ["resume", "cv", "upload", "file", "document"]):
+            manual_fields.append({
+                "source_index": field.get("source_index"),
+                "visible_label": field.get("visible_label", ""),
+                "reason": "Manual upload required"
+            })
+            continue
+
+        if "email" in label or field_type == "email":
+            if not looks_like_email(answer):
+                manual_fields.append({
+                    "source_index": field.get("source_index"),
+                    "visible_label": field.get("visible_label", ""),
+                    "reason": "Rejected unsafe email mapping"
+                })
+                continue
+
+        if "linkedin" in label or field_type == "linkedin":
+            if "linkedin.com" not in answer.lower():
+                manual_fields.append({
+                    "source_index": field.get("source_index"),
+                    "visible_label": field.get("visible_label", ""),
+                    "reason": "Rejected unsafe LinkedIn mapping"
+                })
+                continue
+
+        if "phone" in label or "mobile" in label or field_type == "phone":
+            digit_count = len("".join(char for char in answer if char.isdigit()))
+            if digit_count < 7:
+                manual_fields.append({
+                    "source_index": field.get("source_index"),
+                    "visible_label": field.get("visible_label", ""),
+                    "reason": "Rejected unsafe phone mapping"
+                })
+                continue
+
+        safe_fields.append(field)
+
+    fill_package["fillable_fields"] = safe_fields
+    fill_package["fillable_count"] = len(safe_fields)
+    fill_package["manual_fields"] = manual_fields
+
+    return fill_package
 
 @app.post("/generate-fill-package")
 def generate_fill_package(payload: FillPackageRequest):
@@ -303,7 +363,8 @@ def generate_fill_package(payload: FillPackageRequest):
         import json
         parsed = json.loads(raw_text)
 
-        return parsed
+        validated = validate_fill_package(parsed)
+        return validated
 
     except Exception as error:
         return {
