@@ -200,6 +200,11 @@ Rules:
 - Do not answer criminal, disability, ethnicity, gender, veteran, or equal-opportunity questions unless the profile explicitly contains a safe answer.
 - Do not fill file upload fields. Mark them as needs_manual_upload.
 - If unsure, return an empty answer.
+File upload handling:
+- If a field is for resume, CV, cover letter, portfolio or document upload, do not put it in fillable_fields.
+- Add it to manual_fields.
+- Reason should be "Manual upload required".
+- Never use local file paths as answers.
 
 Important:
 Each inspected field has a source_index. Use that exact source_index in your output so the extension can fill the correct field.
