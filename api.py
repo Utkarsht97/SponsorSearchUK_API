@@ -46,8 +46,8 @@ def health_check():
 def analyze_form(payload: dict):
     return {
         "status": "received",
-        "profile_id": payload.get("profile_id", ""),
-        "candidate_name": "",
+        "profile_id": payload.get("profile_id", "default_profile"),
+        "candidate_name": "Candidate",
         "application_url": payload.get("application_url", "")
     }
 
