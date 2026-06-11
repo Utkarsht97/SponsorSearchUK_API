@@ -34,6 +34,12 @@ class FillPackageRequest(BaseModel):
     inspected_fields: List[Dict[str, Any]]
     profile_id: Optional[str] = None
 
+@app.get("/debug-profile")
+def debug_profile():
+
+    profile = get_profile()
+
+    return profile
 
 @app.get("/")
 def health_check():
