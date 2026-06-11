@@ -36,10 +36,14 @@ class FillPackageRequest(BaseModel):
 
 @app.get("/debug-profile")
 def debug_profile():
-
     profile = get_profile()
-
     return profile
+
+@app.get("/version")
+def version():
+    return {
+        "version": "11-june-debug-test"
+    }
 
 @app.get("/")
 def health_check():
