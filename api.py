@@ -34,6 +34,31 @@ class FillPackageRequest(BaseModel):
     inspected_fields: List[Dict[str, Any]]
     profile_id: Optional[str] = None
 
+@app.post("/active-profile")
+def active_profile(payload: dict):
+    profile = get_profile()
+
+    if not profile:
+        return {
+            "status": "error",
+            "message": "No active profile found.",
+            "profile_id": None
+        }
+
+    profile_data = profile.get("profile_json") or profile.get("profile") or profile
+
+    profile_id = (
+        profile_data.get("profile_metadata", {}).get("profile_id")
+        if isinstance(profile_data, dict)
+        else None
+    )
+
+    return {
+        "status": "success",
+        "profile_id": profile_id,
+        "profile": profile_data
+    }
+
 @app.get("/debug-profile")
 def debug_profile():
 
