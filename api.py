@@ -42,6 +42,67 @@ def health_check():
         "message": "SponsorSearchUK Autofill API is running"
     }
 
+@app.post("/analyze-form")
+def analyze_form(payload: dict):
+    return {
+        "status": "received",
+        "profile_id": payload.get("profile_id", ""),
+        "candidate_name": "",
+        "application_url": payload.get("application_url", "")
+    }
+
+
+@app.post("/detect-form-behaviour")
+def detect_form_behaviour(payload: dict):
+    return {
+        "status": "success",
+        "form_behavior": "standard_application_form"
+    }
+
+
+@app.post("/inspect-form")
+def inspect_form(payload: dict):
+    return {
+        "status": "success",
+        "field_count": 0,
+        "fields_preview": []
+    }
+
+
+@app.post("/classify-fields")
+def classify_fields(payload: dict):
+    return {
+        "status": "success",
+        "classified_count": 0,
+        "classified_fields": []
+    }
+
+
+@app.post("/resolve-fields")
+def resolve_fields(payload: dict):
+    return {
+        "status": "success",
+        "resolved_count": 0,
+        "resolved_fields": []
+    }
+
+
+@app.post("/generate-answers")
+def generate_answers(payload: dict):
+    return {
+        "status": "success",
+        "generated_count": 0,
+        "generated_answers": []
+    }
+
+
+@app.post("/get-resolved-fill-package")
+def get_resolved_fill_package(payload: dict):
+    return {
+        "status": "success",
+        "fillable_count": 0,
+        "fillable_fields": []
+    }
 
 def get_profile(profile_id: Optional[str] = None):
     query = supabase.table("profiles").select("*")
